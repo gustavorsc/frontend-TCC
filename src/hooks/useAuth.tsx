@@ -88,16 +88,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    return onAuthStateChanged(getFirebaseAuth(), async (user) => {
-      firebaseUserRef.current = user;
-      setFirebaseUser(user);
-      if (user) {
-        await carregarUsuario();
-      } else {
-        setUsuario(null);
-      }
-      setCarregando(false);
-    });
+    let unsubscribe = () => {};
+
+    // Watchdog: se o Firebase não responder (config errada, offline), não deixa
+    // o app preso no loader — segue como "visitante".
+    const watchdog = setTimeout(() => {
+      setCarregando((atual) => {
+        if (atual) {
+          console.warn(
+            "[auth] onAuthStateChanged não respondeu a tempo; assumindo sem sessão.",
+          );
+        }
+        return false;
+      });
+    }, 5000);
+
+    try {
+      unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (user) => {
+        clearTimeout(watchdog);
+        firebaseUserRef.current = user;
+        setFirebaseUser(user);
+        if (user) {
+          await carregarUsuario();
+        } else {
+          setUsuario(null);
+        }
+        setCarregando(false);
+      });
+    } catch (e) {
+      // Config de Firebase ausente/inválida: não deixa a árvore em branco —
+      // as telas renderizam como "visitante" e a ação de auth mostra o erro.
+      // (fora do corpo síncrono do efeito para não encadear renders)
+      console.error("[auth] Falha ao inicializar o Firebase:", e);
+      clearTimeout(watchdog);
+      queueMicrotask(() => setCarregando(false));
+    }
+
+    return () => {
+      clearTimeout(watchdog);
+      unsubscribe();
+    };
   }, [carregarUsuario]);
 
   const handleSair = useCallback(async () => {
