@@ -31,11 +31,12 @@ frontend/
 │   │   │   ├── progresso/
 │   │   │   └── perfil/
 │   │   └── layout.tsx
-│   ├── components/          # componentes reutilizáveis (ex.: ui/ para os primitivos)
+│   ├── components/          # ui/ (primitivos), brand/, auth/ (guardas), app/ (casca autenticada)
 │   ├── lib/
-│   │   ├── firebase.ts       # inicialização do Firebase Client SDK
-│   │   └── api.ts            # cliente HTTP centralizado (injeta o Bearer token)
-│   ├── hooks/                # ex.: useAuth, useRotinas
+│   │   ├── firebase.ts       # inicialização do Firebase Client SDK (getFirebaseAuth lazy)
+│   │   ├── auth.ts           # wrappers do Firebase Auth com erros PT-BR (AuthError)
+│   │   └── api.ts            # cliente HTTP centralizado (Bearer token, retry de 401, ApiError)
+│   ├── hooks/                # useAuth (contexto), useApi (useApiQuery para telas de leitura)
 │   └── types/                # tipos espelhando os DTOs da API
 └── package.json
 ```
