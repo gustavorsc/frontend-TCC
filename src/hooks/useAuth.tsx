@@ -66,7 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Registra as pontes com o cliente HTTP uma única vez.
   useEffect(() => {
-    setTokenProvider(() => firebaseUserRef.current?.getIdToken() ?? null);
+    setTokenProvider(
+      (forceRefresh) =>
+        firebaseUserRef.current?.getIdToken(forceRefresh) ?? null,
+    );
     setUnauthorizedHandler(() => {
       router.replace("/login");
     });
