@@ -40,6 +40,12 @@ interface AuthContextValue {
   firebaseUser: User | null;
   /** Perfil vindo do backend (`GET /api/usuarios/me`). */
   usuario: Usuario | null;
+  /**
+   * Nome para exibição. Prefere o `displayName` do Firebase: logo após o
+   * cadastro por e-mail o backend ainda registra `nome = e-mail` (o token novo
+   * não carrega o `displayName` que o `updateProfile` acabou de gravar).
+   */
+  nomeExibicao: string | null;
   /** `true` enquanto o estado inicial de auth ainda não foi resolvido. */
   carregando: boolean;
   entrarComEmail: typeof entrarComEmail;
@@ -143,6 +149,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       firebaseUser,
       usuario,
+      nomeExibicao:
+        firebaseUser?.displayName ??
+        usuario?.nome ??
+        firebaseUser?.email ??
+        null,
       carregando,
       entrarComEmail,
       cadastrarComEmail,
