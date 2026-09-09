@@ -43,12 +43,28 @@ Nível, meta diária, gráfico de XP semanal, emblemas/recompensas, "cronograma 
 hoje" — o protótipo Figma mostra, mas a API não expõe. Conforme o `CLAUDE.md`,
 campo sem dado no backend é omitido.
 
+## Correções junto (integração com o backend real)
+
+Teste e2e com Chrome + Firebase + backend em `:3000` (cadastro → dashboard):
+
+- **Nome mostrava o e-mail** após cadastro por e-mail. Corrigido:
+  `lib/auth.ts` força `getIdToken(true)` depois do `updateProfile`; `useAuth`
+  guarda o nome num state (`nomeFirebase`) ressincronizado após o cadastro
+  (o objeto `User` é mutável e o `updateProfile` roda depois do
+  `onAuthStateChanged`). Agora o `h1` mostra "Olá, QA".
+- **`GET /api/usuarios/me` → 500 no 1º acesso** (corrida: 3 chamadas paralelas
+  tentam criar o `Usuario`). Correção no **backend** (branch
+  `fix/primeiro-acesso-concorrente`): `create` protegido contra `P2002` +
+  reconciliação de nome/email pelo token. **Precisa subir o backend nessa branch.**
+
 ## Verificação
-- `npm run lint` — limpo
-- `npm run build` — passa; `/dashboard` compila (render real precisa de sessão +
-  backend em `:3000`)
+- `npm run lint` / `npm run build` — limpos
+- e2e real: cadastro → redirect → dashboard com dados do backend, CORS ok,
+  sem erro no console, nome correto. Screenshots desktop+mobile de login e
+  dashboard conferidos.
 
 ## Pendências
 - Rotas `/rotinas`, `/chat`, `/progresso`, `/ranking`, `/perfil` ainda dão 404
   (a `NavBar` já aponta para elas) — próximas etapas.
-- Verificação visual nos 3 breakpoints pendente (precisa de `.env.local` + backend).
+- Login com e-mail/senha e Google ainda não exercitados de ponta a ponta (só o
+  cadastro) — mesma infra, baixo risco.
