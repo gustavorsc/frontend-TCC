@@ -32,11 +32,20 @@ identidade da tela de login.
 - `npm run lint` — limpo
 - `npm run build` — passa; `/cadastro` e `/recuperar-senha` prerenderizados
 
+## Nome de exibição
+
+O backend define `Usuario.nome` a partir do token **no 1º acesso**, e o token
+recém-criado no cadastro por e-mail ainda não tem o `displayName` que o
+`updateProfile` acabou de gravar → o `nome` no backend nasce igual ao e-mail.
+
+**Tratado no frontend:** `useAuth` passa a expor `nomeExibicao`
+(`firebaseUser.displayName ?? usuario.nome ?? firebaseUser.email`). As telas usam
+esse valor, não `usuario.nome` cru.
+
+**Follow-up no backend** (`docs/backend-followups/nome-reconciliacao.md` no repo
+do backend): o middleware de auth pode reconciliar `nome`/`email` a partir do
+token quando divergirem — resolve o caso na origem e ainda cobre troca de nome no
+provedor. Não bloqueia o frontend.
+
 ## Pendências conhecidas
-- **Nome no cadastro por e-mail:** o backend define `Usuario.nome` a partir do
-  token no 1º acesso, e o token recém-criado ainda não tem o `displayName` que o
-  `updateProfile` acabou de gravar → o `nome` no backend fica igual ao e-mail.
-  Telas devem preferir `firebaseUser.displayName` quando houver. Corrigir de vez
-  depende do backend (reconciliar `nome` no `GET /me` ou expor `PUT /me`) —
-  **alinhar no repo do backend.**
 - `/dashboard` (destino pós-cadastro/login) ainda não existe — Etapa 6.
