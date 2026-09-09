@@ -10,7 +10,9 @@ Desktop = 1280 px, mobile = 390 px (`@2x`).
 | Recuperar senha | `recuperar-senha-desktop.png` / `recuperar-senha-mobile.png` | 5 |
 | Dashboard (progresso/gamificação) | `dashboard-desktop.png` / `dashboard-mobile.png` | 6 |
 | Chat com IA | `chat-desktop.png` / `chat-mobile.png` | 7 |
+| Rotinas — lista | `rotinas-lista-desktop.png` / `rotinas-lista-mobile.png` · `rotinas-vazio-desktop.png` | 8 |
+| Rotina — detalhe | `rotina-detalhe-desktop.png` / `rotina-detalhe-mobile.png` · `rotina-detalhe-concluida-desktop.png` · `rotina-add-tarefa-desktop.png` | 8 |
 
-Dashboard e chat aparecem com estado vazio (usuário de teste recém-criado, sem
-rotinas). As telas ainda não feitas — Rotinas, Progresso, Ranking, Perfil — serão
-adicionadas conforme as etapas.
+As telas de rotina usam uma rotina de exemplo inserida direto no banco para o
+teste (a criação real depende da OpenAI). Telas ainda não feitas: Progresso,
+Ranking, Perfil.
