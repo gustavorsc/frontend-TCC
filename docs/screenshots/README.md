@@ -12,7 +12,9 @@ Desktop = 1280 px, mobile = 390 px (`@2x`).
 | Chat com IA | `chat-desktop.png` / `chat-mobile.png` | 7 |
 | Rotinas — lista | `rotinas-lista-desktop.png` / `rotinas-lista-mobile.png` · `rotinas-vazio-desktop.png` | 8 |
 | Rotina — detalhe | `rotina-detalhe-desktop.png` / `rotina-detalhe-mobile.png` · `rotina-detalhe-concluida-desktop.png` · `rotina-add-tarefa-desktop.png` | 8 |
+| Progresso | `progresso-desktop.png` / `progresso-mobile.png` · `progresso-desafio-concluido-desktop.png` | 9 |
+| Ranking | `ranking-desktop.png` / `ranking-mobile.png` | 9 |
 
-As telas de rotina usam uma rotina de exemplo inserida direto no banco para o
-teste (a criação real depende da OpenAI). Telas ainda não feitas: Progresso,
-Ranking, Perfil.
+As telas de rotina/progresso/ranking usam dados de exemplo inseridos direto no
+banco para o teste (a criação real depende da OpenAI). Tela ainda não feita:
+Perfil.
