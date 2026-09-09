@@ -40,6 +40,12 @@ interface AuthContextValue {
   firebaseUser: User | null;
   /** Perfil vindo do backend (`GET /api/usuarios/me`). */
   usuario: Usuario | null;
+  /**
+   * Nome para exibição. Prefere o `displayName` do Firebase: logo após o
+   * cadastro por e-mail o backend ainda registra `nome = e-mail` (o token novo
+   * não carrega o `displayName` que o `updateProfile` acabou de gravar).
+   */
+  nomeExibicao: string | null;
   /** `true` enquanto o estado inicial de auth ainda não foi resolvido. */
   carregando: boolean;
   entrarComEmail: typeof entrarComEmail;
@@ -57,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  // `displayName` do Firebase copiado para o state (o objeto User é mutável e o
+  // `updateProfile` do cadastro por e-mail roda depois do onAuthStateChanged).
+  const [nomeFirebase, setNomeFirebase] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   // Mantém o usuário atual acessível ao tokenProvider sem recriá-lo.
@@ -111,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTimeout(watchdog);
         firebaseUserRef.current = user;
         setFirebaseUser(user);
+        setNomeFirebase(user?.displayName ?? null);
         if (user) {
           await carregarUsuario();
         } else {
@@ -139,19 +149,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.replace("/login");
   }, [router]);
 
+  const handleCadastrar = useCallback<typeof cadastrarComEmail>(
+    async (email, senha, nome) => {
+      const cred = await cadastrarComEmail(email, senha, nome);
+      // O onAuthStateChanged já disparou com `displayName` vazio; agora que o
+      // `updateProfile` rodou, ressincroniza o nome e recarrega o perfil (o
+      // token já foi renovado em cadastrarComEmail e carrega o `name`).
+      setNomeFirebase(firebaseUserRef.current?.displayName ?? nome ?? null);
+      await carregarUsuario();
+      return cred;
+    },
+    [carregarUsuario],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       firebaseUser,
       usuario,
+      nomeExibicao:
+        nomeFirebase ?? usuario?.nome ?? firebaseUser?.email ?? null,
       carregando,
       entrarComEmail,
-      cadastrarComEmail,
+      cadastrarComEmail: handleCadastrar,
       entrarComGoogle,
       recuperarSenha,
       sair: handleSair,
       recarregarUsuario: carregarUsuario,
     }),
-    [firebaseUser, usuario, carregando, handleSair, carregarUsuario],
+    [
+      firebaseUser,
+      usuario,
+      nomeFirebase,
+      carregando,
+      handleSair,
+      handleCadastrar,
+      carregarUsuario,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

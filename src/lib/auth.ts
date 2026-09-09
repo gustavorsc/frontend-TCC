@@ -72,6 +72,10 @@ export async function cadastrarComEmail(
     );
     if (nome) {
       await updateProfile(cred.user, { displayName: nome });
+      // O ID Token gerado no `create` não tem o `name`. Força um token novo para
+      // as próximas chamadas à API já irem com o nome — o backend reconcilia o
+      // `Usuario.nome` a partir do token.
+      await cred.user.getIdToken(true);
     }
     return cred;
   } catch (err) {
