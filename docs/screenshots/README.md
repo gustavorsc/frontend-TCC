@@ -14,7 +14,8 @@ Desktop = 1280 px, mobile = 390 px (`@2x`).
 | Rotina — detalhe | `rotina-detalhe-desktop.png` / `rotina-detalhe-mobile.png` · `rotina-detalhe-concluida-desktop.png` · `rotina-add-tarefa-desktop.png` | 8 |
 | Progresso | `progresso-desktop.png` / `progresso-mobile.png` · `progresso-desafio-concluido-desktop.png` | 9 |
 | Ranking | `ranking-desktop.png` / `ranking-mobile.png` | 9 |
+| Perfil | `perfil-desktop.png` / `perfil-mobile.png` · `perfil-nome-editado-desktop.png` · `perfil-excluir-confirm-desktop.png` | 10 |
 
 As telas de rotina/progresso/ranking usam dados de exemplo inseridos direto no
-banco para o teste (a criação real depende da OpenAI). Tela ainda não feita:
-Perfil.
+banco para o teste (a criação real depende da OpenAI). **Todas as 10 telas do
+protótipo estão implementadas.**

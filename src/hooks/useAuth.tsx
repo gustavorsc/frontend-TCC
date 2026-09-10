@@ -27,6 +27,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { api, setTokenProvider, setUnauthorizedHandler } from "@/lib/api";
 import {
+  atualizarNome,
   cadastrarComEmail,
   entrarComEmail,
   entrarComGoogle,
@@ -55,6 +56,10 @@ interface AuthContextValue {
   sair: () => Promise<void>;
   /** Recarrega `GET /api/usuarios/me` (ex.: após ganhar XP). */
   recarregarUsuario: () => Promise<void>;
+  /** Atualiza o `displayName` no Firebase (não há `PUT /me`). */
+  atualizarNome: (nome: string) => Promise<void>;
+  /** `DELETE /api/usuarios/me` + `signOut` (LGPD — RNF02). */
+  excluirConta: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -162,6 +167,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [carregarUsuario],
   );
 
+  const handleAtualizarNome = useCallback(
+    async (nome: string) => {
+      await atualizarNome(nome);
+      setNomeFirebase(firebaseUserRef.current?.displayName ?? nome);
+      await carregarUsuario();
+    },
+    [carregarUsuario],
+  );
+
+  const handleExcluirConta = useCallback(async () => {
+    await api("/api/usuarios/me", { method: "DELETE" });
+    await handleSair();
+  }, [handleSair]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       firebaseUser,
@@ -175,6 +194,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       recuperarSenha,
       sair: handleSair,
       recarregarUsuario: carregarUsuario,
+      atualizarNome: handleAtualizarNome,
+      excluirConta: handleExcluirConta,
     }),
     [
       firebaseUser,
@@ -183,6 +204,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       carregando,
       handleSair,
       handleCadastrar,
+      handleAtualizarNome,
+      handleExcluirConta,
       carregarUsuario,
     ],
   );

@@ -117,3 +117,21 @@ export async function sair(): Promise<void> {
     throw toAuthError(err);
   }
 }
+
+/**
+ * Atualiza só o `displayName` no Firebase (não há `PUT /api/usuarios/me`).
+ * Força um token novo para a próxima chamada à API já carregar o nome — o
+ * backend reconcilia `Usuario.nome` a partir do token.
+ */
+export async function atualizarNome(nome: string): Promise<void> {
+  const user = getFirebaseAuth().currentUser;
+  if (!user) {
+    throw new AuthError("auth/no-user", "Sua sessão expirou. Entre de novo.");
+  }
+  try {
+    await updateProfile(user, { displayName: nome });
+    await user.getIdToken(true);
+  } catch (err) {
+    throw toAuthError(err);
+  }
+}
