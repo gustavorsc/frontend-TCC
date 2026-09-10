@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rotinas de Estudo — Frontend
 
-## Getting Started
+Interface web de uma aplicação de gerenciamento de rotinas de estudo com **IA** e
+**gamificação** (usuário único, modelo tipo Duolingo). Projeto de TCC.
 
-First, run the development server:
+O backend vive em outro repositório (`backend-TCC`) e já está implementado — este
+app só o consome. O contrato da API está em [`CLAUDE.md`](CLAUDE.md) e, campo a
+campo, em `../backend-TCC/docs/referencia-api.md`.
+
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS v4**
+- **Firebase Client SDK** — autenticação (e-mail/senha e Google)
+- `fetch` via um cliente HTTP central ([`src/lib/api.ts`](src/lib/api.ts))
+
+## Telas
+
+Login · Cadastro · Recuperar senha · Dashboard · Chat com IA (criação de rotina) ·
+Rotinas (lista + detalhe com CRUD de tarefas) · Progresso/gamificação · Ranking
+semanal · Perfil.
+
+Capturas em [`docs/screenshots/`](docs/screenshots/). Histórico de
+desenvolvimento por etapa em [`docs/etapas/`](docs/etapas/).
+
+## Rodando localmente
+
+**Pré-requisitos:** Node 22+, o **backend rodando em `http://localhost:3000`**
+(veja o repositório `backend-TCC`), e um projeto Firebase com os provedores
+**E-mail/senha** e **Google** habilitados em *Authentication → Sign-in method*.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.local.example .env.local   # preencher (veja abaixo)
+npm run dev                         # http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> O frontend sobe na porta **3001** porque o backend ocupa a **3000**. No `.env`
+> do backend, `FRONTEND_URL` precisa ser `http://localhost:3001` (CORS).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Variáveis de ambiente (`.env.local`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variável | Descrição |
+|---|---|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Config **Web** do Firebase (pública). Console → Configurações do projeto → Seus apps → app Web → "Configuração do SDK" |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `<project-id>.firebaseapp.com` |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | id do projeto Firebase |
+| `NEXT_PUBLIC_API_URL` | URL do backend — `http://localhost:3000` em dev |
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento (porta 3001) |
+| `npm run build` | Build de produção (roda o type-check) |
+| `npm run start` | Servir o build de produção (porta 3001) |
+| `npm run lint` | ESLint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estrutura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── (auth)/      login, cadastro, recuperar-senha  (guarda: só visitantes)
+│   ├── (app)/       dashboard, rotinas, chat, progresso, ranking, perfil  (guarda: AuthGate)
+│   └── layout.tsx   <AuthProvider>
+├── components/
+│   ├── ui/          primitivos (Button, Card, Modal, TextField, …)
+│   ├── auth/        AuthGate / GuestGate
+│   ├── app/         NavBar (casca autenticada)
+│   └── brand/       Logo, GoogleIcon
+├── hooks/
+│   ├── useAuth      contexto único do usuário autenticado
+│   └── useApi       useApiQuery — GET com loading/erro/retry
+├── lib/
+│   ├── firebase.ts  init do Firebase Client SDK (lazy)
+│   ├── auth.ts      wrappers do Firebase Auth com erros em PT-BR
+│   └── api.ts       cliente HTTP (Bearer token, retry de 401, ApiError)
+└── types/           DTOs espelhando a API
+```
 
-## Deploy on Vercel
+## Autenticação
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Login/cadastro/recuperação de senha são 100% Firebase (frontend). O backend só
+**verifica** o ID Token enviado em `Authorization: Bearer <token>`. No primeiro
+acesso o backend cria o `Usuario` automaticamente — não há rota de "registrar".
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Limitação conhecida
+
+Criar uma rotina pelo **Chat com IA** exige crédito na conta OpenAI configurada no
+backend. Sem crédito, `POST /api/rotinas/chat` responde `503` e a tela mostra uma
+mensagem amigável (o restante do app funciona normalmente).
