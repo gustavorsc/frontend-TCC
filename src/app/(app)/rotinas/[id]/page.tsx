@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
+  HelpCircle,
   Pencil,
   Plus,
   Trash2,
@@ -15,7 +16,7 @@ import {
 import { api, ApiError } from "@/lib/api";
 import { useApiQuery } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
-import type { RotinaComTarefas, Tarefa } from "@/types";
+import type { RotinaComTarefas, Tarefa, TarefaConcluidaResposta } from "@/types";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -231,14 +232,34 @@ function TarefaItem({
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [titulo, setTitulo] = useState(tarefa.titulo);
   const [descricao, setDescricao] = useState(tarefa.descricao ?? "");
+  // RN20 — última alternativa marcada errada, pra dar feedback sem penalidade.
+  const [opcaoErrada, setOpcaoErrada] = useState<number | null>(null);
 
-  async function concluir() {
+  const ehQuiz = !!tarefa.pergunta;
+
+  /** Sem pergunta: `respostaSelecionada` é omitido (conclui direto). */
+  async function concluir(respostaSelecionada?: number) {
     if (tarefa.concluida || processando) return;
     setProcessando(true);
     aoErro(null);
+    setOpcaoErrada(null);
     try {
-      await api(`/api/tarefas/${tarefa.id}/concluir`, { method: "PATCH" });
-      await aoMudar();
+      const resposta = await api<TarefaConcluidaResposta>(
+        `/api/tarefas/${tarefa.id}/concluir`,
+        {
+          method: "PATCH",
+          body:
+            respostaSelecionada !== undefined
+              ? { respostaSelecionada }
+              : undefined,
+        },
+      );
+      if (resposta.correta === false) {
+        // Errou: não conclui, sem penalidade — deixa tentar de novo.
+        setOpcaoErrada(respostaSelecionada ?? null);
+      } else {
+        await aoMudar();
+      }
     } catch (e) {
       aoErro(
         e instanceof ApiError
@@ -330,64 +351,104 @@ function TarefaItem({
   }
 
   return (
-    <Card className={`flex items-start gap-3 p-4 ${tarefa.concluida ? "opacity-70" : ""}`}>
-      <button
-        onClick={concluir}
-        disabled={tarefa.concluida || processando}
-        aria-label={tarefa.concluida ? "Tarefa concluída" : "Concluir tarefa"}
-        className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors ${
-          tarefa.concluida
-            ? "border-emerald-500 bg-emerald-500 text-white"
-            : "border-slate-600 text-transparent hover:border-indigo-400"
-        } disabled:cursor-default`}
-      >
-        {processando ? (
-          <Loader2 size={14} className="animate-spin text-slate-400" />
+    <Card className={`p-4 ${tarefa.concluida ? "opacity-70" : ""}`}>
+      <div className="flex items-start gap-3">
+        {ehQuiz && !tarefa.concluida ? (
+          <div
+            className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-amber-500/50 text-amber-400"
+            aria-hidden
+          >
+            <HelpCircle size={14} />
+          </div>
         ) : (
-          <Check size={14} />
+          <button
+            onClick={() => concluir()}
+            disabled={tarefa.concluida || processando}
+            aria-label={tarefa.concluida ? "Tarefa concluída" : "Concluir tarefa"}
+            className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors ${
+              tarefa.concluida
+                ? "border-emerald-500 bg-emerald-500 text-white"
+                : "border-slate-600 text-transparent hover:border-indigo-400"
+            } disabled:cursor-default`}
+          >
+            {processando ? (
+              <Loader2 size={14} className="animate-spin text-slate-400" />
+            ) : (
+              <Check size={14} />
+            )}
+          </button>
         )}
-      </button>
 
-      <div className="min-w-0 flex-1">
-        <p
-          className={`text-sm font-medium ${
-            tarefa.concluida ? "text-slate-400 line-through" : "text-white"
-          }`}
-        >
-          {tarefa.titulo}
-        </p>
-        {tarefa.descricao && (
-          <p className="mt-0.5 text-xs text-slate-500">{tarefa.descricao}</p>
-        )}
-        {tarefa.concluida && (
-          <p className="mt-1 text-xs font-medium text-emerald-500">
-            +{tarefa.xpConcedido} XP
+        <div className="min-w-0 flex-1">
+          <p
+            className={`text-sm font-medium ${
+              tarefa.concluida ? "text-slate-400 line-through" : "text-white"
+            }`}
+          >
+            {tarefa.titulo}
           </p>
+          {tarefa.descricao && (
+            <p className="mt-0.5 text-xs text-slate-500">{tarefa.descricao}</p>
+          )}
+          {tarefa.concluida && (
+            <p className="mt-1 text-xs font-medium text-emerald-500">
+              +{tarefa.xpConcedido} XP
+            </p>
+          )}
+        </div>
+
+        {!tarefa.concluida && (
+          <div className="flex shrink-0 gap-0.5">
+            <button
+              onClick={() => setEditando(true)}
+              aria-label="Editar tarefa"
+              className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={() => {
+                if (ehUltima) {
+                  aoErro("Uma rotina precisa ter ao menos uma tarefa.");
+                  return;
+                }
+                setConfirmandoExclusao(true);
+              }}
+              aria-label="Remover tarefa"
+              className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         )}
       </div>
 
-      {!tarefa.concluida && (
-        <div className="flex shrink-0 gap-0.5">
-          <button
-            onClick={() => setEditando(true)}
-            aria-label="Editar tarefa"
-            className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={() => {
-              if (ehUltima) {
-                aoErro("Uma rotina precisa ter ao menos uma tarefa.");
-                return;
-              }
-              setConfirmandoExclusao(true);
-            }}
-            aria-label="Remover tarefa"
-            className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
-          >
-            <Trash2 size={14} />
-          </button>
+      {/* RN20 — card de estudo: só conclui acertando a alternativa. */}
+      {ehQuiz && !tarefa.concluida && (
+        <div className="mt-3 border-t border-slate-800 pt-3">
+          <p className="text-sm text-slate-300">{tarefa.pergunta}</p>
+          <div className="mt-2.5 grid gap-1.5 sm:grid-cols-2">
+            {tarefa.opcoes.map((opcao, i) => (
+              <button
+                key={i}
+                type="button"
+                disabled={processando}
+                onClick={() => concluir(i)}
+                className={`rounded-xl border px-3 py-2 text-left text-sm transition-colors disabled:opacity-60 ${
+                  opcaoErrada === i
+                    ? "border-rose-500 bg-rose-500/10 text-rose-300"
+                    : "border-slate-700 bg-slate-900 text-slate-200 hover:border-indigo-400 hover:bg-slate-800"
+                }`}
+              >
+                {opcao}
+              </button>
+            ))}
+          </div>
+          {opcaoErrada !== null && (
+            <p className="mt-2 text-xs text-rose-400">
+              Não foi essa — tenta outra alternativa.
+            </p>
+          )}
         </div>
       )}
 

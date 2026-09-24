@@ -85,8 +85,13 @@ Login/cadastro/recuperação de senha são 100% Firebase (frontend). O backend s
 **verifica** o ID Token enviado em `Authorization: Bearer <token>`. No primeiro
 acesso o backend cria o `Usuario` automaticamente — não há rota de "registrar".
 
-## Limitação conhecida
+## Card de estudo (RN20)
 
-Criar uma rotina pelo **Chat com IA** exige crédito na conta OpenAI configurada no
-backend. Sem crédito, `POST /api/rotinas/chat` responde `503` e a tela mostra uma
-mensagem amigável (o restante do app funciona normalmente).
+Tarefas geradas pela IA vêm com uma questão de múltipla escolha (`pergunta` +
+`opcoes`) — a tarefa só conclui acertando; errar não penaliza e não tem limite
+de tentativas. A resposta certa nunca é exposta pela API. Tarefas criadas
+manualmente continuam sendo um clique direto.
+
+Criar uma rotina pelo **Chat com IA** exige crédito na conta OpenAI configurada
+no backend — sem crédito, `POST /api/rotinas/chat` responde `503` e a tela
+mostra uma mensagem amigável (o restante do app funciona normalmente).

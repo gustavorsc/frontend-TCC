@@ -74,11 +74,13 @@ Base URL vem de `NEXT_PUBLIC_API_URL`. Em desenvolvimento o backend roda em `htt
 | POST | `/api/rotinas/:id/tarefas` | body `{ titulo, descricao? }` → `201` com a `Tarefa` |
 | PUT | `/api/tarefas/:id` | edita `titulo, descricao` (≥1 campo) |
 | DELETE | `/api/tarefas/:id` | `204` — recusa remover a **última** tarefa da rotina (`400 ROTINA_SEM_TAREFA`) |
-| PATCH | `/api/tarefas/:id/concluir` | sem body → `200` com a `Tarefa` (`concluida: true`, `xpConcedido: 10`). Idempotente. Depois, recarregar `useAuth` (XP/streak mudaram) |
+| PATCH | `/api/tarefas/:id/concluir` | tarefa sem `pergunta` (manual): body vazio, conclui direto. Tarefa **com** `pergunta` (gerada pela IA, RN20): body `{ respostaSelecionada }` **obrigatório** (índice em `opcoes`, 0-based) — errar não conclui e devolve `200 { concluida:false, correta:false }` sem penalidade/limite de tentativas; acertar devolve `200 { concluida:true, correta:true, xpConcedido:10 }`. Idempotente. Depois de concluir de verdade, recarregar `useAuth` (XP/streak mudaram) |
 | GET | `/api/desafios` | `Desafio[]` — `conteudo` é texto da IA (1ª linha = título) |
 | PATCH | `/api/desafios/:id/concluir` | sem body → `200` com o `Desafio`. Idempotente |
 
-**Erros:** toda resposta de erro vem no formato `{ error: { message, code } }`. Tratar de forma centralizada no cliente HTTP (`lib/api.ts`), não em cada componente. `code` é um dos: `VALIDACAO`, `ROTINA_SEM_TAREFA`, `NAO_AUTENTICADO`, `*_ACESSO_NEGADO(A)`, `*_NAO_ENCONTRADO(A)`, `LIMITE_IA_DIARIO`, `IA_RESPOSTA_INVALIDA`, `IA_INDISPONIVEL`, `ERRO_INTERNO` (ver `ApiErrorCode` em `types/`).
+**Erros:** toda resposta de erro vem no formato `{ error: { message, code } }`. Tratar de forma centralizada no cliente HTTP (`lib/api.ts`), não em cada componente. `code` é um dos: `VALIDACAO`, `ROTINA_SEM_TAREFA`, `RESPOSTA_OBRIGATORIA`, `NAO_AUTENTICADO`, `*_ACESSO_NEGADO(A)`, `*_NAO_ENCONTRADO(A)`, `LIMITE_IA_DIARIO`, `IA_RESPOSTA_INVALIDA`, `IA_INDISPONIVEL`, `ERRO_INTERNO` (ver `ApiErrorCode` em `types/`).
+
+**Tarefa como card de estudo (RN20):** toda `Tarefa` tem `pergunta: string | null` e `opcoes: string[]`. Tarefas geradas pela IA (via `/chat`) sempre vêm com `pergunta`/`opcoes` preenchidos; tarefas criadas manualmente (`POST /rotinas/:id/tarefas`) vêm com `pergunta: null`, `opcoes: []`. A **resposta certa nunca é exposta pela API** — não tem como validar no cliente, só chamando `concluir` com o índice escolhido e lendo `correta` na resposta.
 
 **Limite de IA (RN15):** toda resposta do chat traz `chamadasRestantes` (limite 10/dia, reseta na virada do dia em São Paulo). Ao esgotar, `POST /api/rotinas/chat` responde `429 LIMITE_IA_DIARIO` — mostrar mensagem clara na tela de chat, não erro genérico. `ApiError.isRateLimited` cobre esse caso; `ApiError.isIaUnavailable` cobre `502/503` (`IA_INDISPONIVEL`/`IA_RESPOSTA_INVALIDA`).
 
@@ -86,7 +88,7 @@ Base URL vem de `NEXT_PUBLIC_API_URL`. Em desenvolvimento o backend roda em `htt
 
 Login, Cadastro, Recuperação de senha, Dashboard, Chat com IA (criação de rotina), Lista de rotinas, Detalhe da rotina, Progresso/gamificação, Ranking, Perfil. Use o protótipo como fonte de verdade para layout, cores e componentes — o `CLAUDE.md` não substitui o design, só o contrato de dados por trás dele.
 
-Onde o protótipo pede dados que o backend não tem, **omitir o campo** (não inventar rota): não há "apelido público" (o ranking usa `nome` do Firebase), nem "foco/objetivo de estudo" no perfil, nem histórico de atividades do usuário. "Exercícios/questões" do protótipo correspondem aos **desafios adaptativos** (`/api/desafios`), que são texto gerado pela IA — não um quiz de múltipla escolha.
+Onde o protótipo pede dados que o backend não tem, **omitir o campo** (não inventar rota): não há "apelido público" (o ranking usa `nome` do Firebase), nem "foco/objetivo de estudo" no perfil, nem histórico de atividades do usuário. Os **desafios adaptativos** (`/api/desafios`) são texto livre gerado pela IA (objetivo + passos), não um quiz — quem virou quiz de múltipla escolha foram as **tarefas** geradas pela IA (RN20, ver acima).
 
 ## Requisitos não funcionais relevantes ao frontend
 
