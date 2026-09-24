@@ -15,7 +15,9 @@ Desktop = 1280 px, mobile = 390 px (`@2x`).
 | Progresso | `progresso-desktop.png` / `progresso-mobile.png` · `progresso-desafio-concluido-desktop.png` | 9 |
 | Ranking | `ranking-desktop.png` / `ranking-mobile.png` | 9 |
 | Perfil | `perfil-desktop.png` / `perfil-mobile.png` · `perfil-nome-editado-desktop.png` · `perfil-excluir-confirm-desktop.png` | 10 |
+| Rotina — card de estudo (RN20) | `rotina-detalhe-quiz-desktop.png` / `rotina-detalhe-quiz-mobile.png` · `rotina-quiz-resultado-desktop.png` · `chat-rn20-rodada1.png` | 11 |
 
-As telas de rotina/progresso/ranking usam dados de exemplo inseridos direto no
-banco para o teste (a criação real depende da OpenAI). **Todas as 10 telas do
-protótipo estão implementadas.**
+**Todas as 10 telas do protótipo estão implementadas.** As de rotina/progresso/
+ranking anteriores à etapa 11 usam dados de exemplo inseridos direto no banco;
+as da etapa 11 (`rotina-detalhe-quiz-*`, `chat-rn20-*`) já são de uma rotina
+**gerada de verdade pela OpenAI** via `/chat`, com o modelo real.

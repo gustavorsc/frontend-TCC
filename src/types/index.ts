@@ -73,12 +73,37 @@ export interface Tarefa {
   id: string;
   rotinaId: string;
   titulo: string;
+  /** Tarefa da IA: resumo de estudo de verdade. Manual: o que o usuário digitou. */
   descricao: string | null;
   concluida: boolean;
   dataCriacao: string;
   dataConclusao: string | null;
   /** 0 até concluir; vira 10 (RN09/RN11). */
   xpConcedido: number;
+  /**
+   * RN20 — só em tarefas geradas pela IA (`null`/`[]` nas criadas manualmente).
+   * Presente = a tarefa vira um "card de estudo": só conclui acertando
+   * `respostaSelecionada` em `PATCH .../concluir`. `respostaCorreta` nunca é
+   * exposta pela API.
+   */
+  pergunta: string | null;
+  opcoes: string[];
+}
+
+/** PATCH /api/tarefas/:id/concluir — corpo opcional, obrigatório se `tarefa.pergunta`. */
+export interface ConcluirTarefaInput {
+  /** Índice (0-based) da opção escolhida em `tarefa.opcoes`. */
+  respostaSelecionada: number;
+}
+
+/**
+ * 200 de `PATCH /api/tarefas/:id/concluir`. `correta` só aparece quando a
+ * tarefa tinha `pergunta`: `true` = acertou (concluiu), `false` = errou (não
+ * concluiu, pode tentar de novo sem limite/penalidade). Ausente em tarefa sem
+ * pergunta e em conclusão idempotente (já estava concluída).
+ */
+export interface TarefaConcluidaResposta extends Tarefa {
+  correta?: boolean;
 }
 
 /** PUT /api/rotinas/:id — ao menos um campo; `tema` não pode ser vazio. */
@@ -167,6 +192,7 @@ export type ChatResposta = ChatRespostaPergunta | ChatRespostaRotina;
 export type ApiErrorCode =
   | "VALIDACAO"
   | "ROTINA_SEM_TAREFA"
+  | "RESPOSTA_OBRIGATORIA"
   | "NAO_AUTENTICADO"
   | "ROTINA_ACESSO_NEGADO"
   | "TAREFA_ACESSO_NEGADA"
